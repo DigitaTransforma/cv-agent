@@ -129,10 +129,12 @@
 
                 <!-- Action Buttons -->
                 <div class="flex space-x-4">
-                    <button id="analyze-btn" class="flex-1 modern-button text-white font-semibold py-3 px-6 rounded-lg transition duration-300">
+                    <button id="analyze-btn" class="flex-1 modern-button bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition duration-300 flex items-center justify-center gap-2">
+                        <i class="fas fa-magnifying-glass"></i>
                         Analyze Resume
                     </button>
-                    <button id="optimize-btn" class="flex-1 modern-button text-white font-semibold py-3 px-6 rounded-lg transition duration-300">
+                    <button id="optimize-btn" class="flex-1 modern-button bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg transition duration-300 flex items-center justify-center gap-2">
+                        <i class="fas fa-bolt"></i>
                         Optimize Resume
                     </button>
                 </div>
@@ -140,14 +142,11 @@
 
             <!-- Response Section -->
             <div id="response-container" class="bg-gray-800 rounded-lg p-6 relative">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-xl font-semibold">Response</h2>
-                    <button class="copy-button" onclick="copyResponse()">
-                        <i class="fas fa-copy"></i>
-                        <span>Copy</span>
-                    </button>
-                </div>
-                <div id="response-area" class="prose prose-invert"></div>
+                <button id="copy-btn" class="copy-button" onclick="copyToClipboard()">
+                    <i class="fas fa-copy"></i>
+                    <span>Copy</span>
+                </button>
+                <div id="response-area" class="prose prose-invert mt-2"></div>
                 <div id="loading" class="hidden">
                     <div class="spinner mx-auto"></div>
                     <p class="text-center mt-4">Processing your Resume...</p>
@@ -157,7 +156,7 @@
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', () => {
             const uploadArea = document.getElementById('upload-area');
             const fileInput = document.getElementById('cv-upload');
             const jobDescription = document.getElementById('job-description');
@@ -258,17 +257,37 @@
                 }
             }
 
-            function copyResponse() {
-                const responseText = document.getElementById('response-area').innerText;
-                navigator.clipboard.writeText(responseText).then(() => {
-                    const copyBtn = document.querySelector('.copy-button');
-                    const originalContent = copyBtn.innerHTML;
-                    copyBtn.innerHTML = '<i class="fas fa-check"></i><span>Copied!</span>';
-                    setTimeout(() => {
-                        copyBtn.innerHTML = originalContent;
-                    }, 2000);
-                });
+            function copyToClipboard() {
+                const responseArea = document.getElementById('response-area');
+                const copyBtn = document.getElementById('copy-btn');
+                
+                if (responseArea.textContent.trim() === '') return;
+
+                navigator.clipboard.writeText(responseArea.textContent)
+                    .then(() => {
+                        // Visual feedback
+                        copyBtn.innerHTML = '<i class="fas fa-check"></i><span>Copied!</span>';
+                        copyBtn.classList.add('bg-green-600');
+                        
+                        // Reset after 2 seconds
+                        setTimeout(() => {
+                            copyBtn.innerHTML = '<i class="fas fa-copy"></i><span>Copy</span>';
+                            copyBtn.classList.remove('bg-green-600');
+                        }, 2000);
+                    })
+                    .catch(err => {
+                        console.error('Failed to copy text: ', err);
+                        copyBtn.innerHTML = '<i class="fas fa-times"></i><span>Failed</span>';
+                        copyBtn.classList.add('bg-red-600');
+                        
+                        setTimeout(() => {
+                            copyBtn.innerHTML = '<i class="fas fa-copy"></i><span>Copy</span>';
+                            copyBtn.classList.remove('bg-red-600');
+                        }, 2000);
+                    });
             }
+
+            window.copyToClipboard = copyToClipboard;
 
             analyzeBtn.addEventListener('click', () => processCV('analyze'));
             optimizeBtn.addEventListener('click', () => processCV('optimize'));
