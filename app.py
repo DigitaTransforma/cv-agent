@@ -5,10 +5,12 @@ import google.generativeai as genai
 from PyPDF2 import PdfReader
 from docx import Document
 from dotenv import load_dotenv
+from flask_cors import CORS
 
 load_dotenv()
 
 app = Flask(__name__)
+CORS(app)  # Enable CORS for all routes
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 ALLOWED_EXTENSIONS = {'pdf', 'doc', 'docx'}
@@ -127,39 +129,58 @@ def index():
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
-    if 'cv' not in request.files:
-        return jsonify({'error': 'No file provided'}), 400
-    
-    file = request.files['cv']
-    job_description = request.form.get('job_description', '')
-    action = request.form.get('action', '')
-    
-    if file.filename == '':
-        return jsonify({'error': 'No file selected'}), 400
-    
-    if file and allowed_file(file.filename):
-        filename = secure_filename(file.filename)
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        file.save(filepath)
+    try:
+        if 'cv' not in request.files:
+            return jsonify({'error': 'No file provided'}), 400
         
-        # Extract text based on file type
-        if filename.endswith('.pdf'):
-            cv_text = extract_text_from_pdf(filepath)
-        else:
-            cv_text = extract_text_from_doc(filepath)
+        file = request.files['cv']
+        job_description = request.form.get('job_description', '')
+        action = request.form.get('action', '')
         
-        # Clean up the uploaded file
-        os.remove(filepath)
+        if file.filename == '':
+            return jsonify({'error': 'No file selected'}), 400
         
-        # Process based on action
-        if action == 'analyze':
-            result = analyze_cv(cv_text, job_description)
-        else:  # optimize
-            result = optimize_cv(cv_text, job_description)
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             
-        return jsonify({'result': result})
+            # Ensure upload directory exists
+            os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+            
+            try:
+                file.save(filepath)
+                
+                # Extract text based on file type
+                try:
+                    if filename.endswith('.pdf'):
+                        cv_text = extract_text_from_pdf(filepath)
+                    else:
+                        cv_text = extract_text_from_doc(filepath)
+                except Exception as e:
+                    return jsonify({'error': f'Error reading file: {str(e)}'}), 400
+                finally:
+                    # Clean up the uploaded file
+                    if os.path.exists(filepath):
+                        os.remove(filepath)
+                
+                # Process based on action
+                try:
+                    if action == 'analyze':
+                        result = analyze_cv(cv_text, job_description)
+                    else:  # optimize
+                        result = optimize_cv(cv_text, job_description)
+                    
+                    return jsonify({'result': result})
+                except Exception as e:
+                    return jsonify({'error': f'Error processing CV: {str(e)}'}), 500
+                
+            except Exception as e:
+                return jsonify({'error': f'Error saving file: {str(e)}'}), 500
+        
+        return jsonify({'error': 'Invalid file type'}), 400
     
-    return jsonify({'error': 'Invalid file type'}), 400
+    except Exception as e:
+        return jsonify({'error': f'Server error: {str(e)}'}), 500
 
 if __name__ == '__main__':
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
