@@ -97,10 +97,10 @@ def optimize_cv(cv_text, job_description):
 
     ## Personal Information
     IMPORTANT - Extract and include these details from the original CV:
-    - Full Name: [MUST extract from CV]
-    - Email Address: [MUST extract from CV]
-    - Phone Number: [MUST extract from CV]
-    - Location: [MUST extract from CV]
+    - Full Name: [Extract if available in CV]
+    - Email Address: [Extract if available in CV]
+    - Phone Number: [Extract if available in CV]
+    - Location: [Extract if available in CV]
     - LinkedIn: [Extract if available in CV]
 
     ## Professional Summary
