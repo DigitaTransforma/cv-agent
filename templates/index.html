@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CV Agent - AI-powered CV optimization</title>
+    <title>Resume Agent - AI-powered Resume optimization</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/marked/lib/marked.min.js" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         .dark-mode {
             background-color: #1a1a1a;
@@ -30,8 +30,34 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-        #response-area {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        #response-container {
+            height: calc(100vh - 2rem);
+            overflow-y: auto;
+            position: relative;
+        }
+        .copy-button {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            padding: 0.5rem;
+            background: #374151;
+            border-radius: 0.5rem;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .copy-button:hover {
+            background: #4B5563;
+        }
+        .modern-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            transition: all 0.3s ease;
+            transform: translateY(0);
+        }
+        .modern-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.25);
         }
         #response-area h1 { 
             font-size: 1.8em;
@@ -76,22 +102,20 @@
 <body class="dark-mode min-h-screen">
     <div class="container mx-auto px-4 py-8">
         <header class="mb-8">
-            <h1 class="text-3xl font-bold mb-2">CV Agent</h1>
-            <p class="text-gray-400">AI-powered CV optimization to help you land your dream job</p>
+            <h1 class="text-3xl font-bold mb-2">Resume Agent</h1>
+            <p class="text-gray-400">AI-powered Resume optimization to help you land your dream job</p>
         </header>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div class="space-y-6">
-                <!-- CV Upload Section -->
+                <!-- Resume Upload Section -->
                 <div class="bg-gray-800 rounded-lg p-6">
-                    <h2 class="text-xl font-semibold mb-4">Upload Your CV</h2>
+                    <h2 class="text-xl font-semibold mb-4">Upload Your Resume</h2>
                     <div id="upload-area" class="upload-area rounded-lg p-8 text-center cursor-pointer">
                         <div class="mb-4">
-                            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                            </svg>
+                            <i class="fas fa-file-upload text-4xl text-gray-400"></i>
                         </div>
-                        <p class="text-gray-400">Drop your CV here or click to browse</p>
+                        <p class="text-gray-400">Drop your Resume here or click to browse</p>
                         <p class="text-sm text-gray-500 mt-2">Supports PDF, DOC, DOCX</p>
                         <input type="file" id="cv-upload" class="hidden" accept=".pdf,.doc,.docx">
                     </div>
@@ -105,22 +129,28 @@
 
                 <!-- Action Buttons -->
                 <div class="flex space-x-4">
-                    <button id="analyze-btn" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition duration-300">
-                        Analyze CV
+                    <button id="analyze-btn" class="flex-1 modern-button text-white font-semibold py-3 px-6 rounded-lg transition duration-300">
+                        Analyze Resume
                     </button>
-                    <button id="optimize-btn" class="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-6 rounded-lg transition duration-300">
-                        Optimize CV
+                    <button id="optimize-btn" class="flex-1 modern-button text-white font-semibold py-3 px-6 rounded-lg transition duration-300">
+                        Optimize Resume
                     </button>
                 </div>
             </div>
 
             <!-- Response Section -->
-            <div class="bg-gray-800 rounded-lg p-6">
-                <h2 class="text-xl font-semibold mb-4">Response</h2>
-                <div id="response-area" class="bg-gray-700 rounded-lg p-4 min-h-[400px] text-gray-300 overflow-auto">
-                    <div class="flex items-center justify-center h-full text-gray-400">
-                        Response will appear here after analysis or optimization
-                    </div>
+            <div id="response-container" class="bg-gray-800 rounded-lg p-6 relative">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-semibold">Response</h2>
+                    <button class="copy-button" onclick="copyResponse()">
+                        <i class="fas fa-copy"></i>
+                        <span>Copy</span>
+                    </button>
+                </div>
+                <div id="response-area" class="prose prose-invert"></div>
+                <div id="loading" class="hidden">
+                    <div class="spinner mx-auto"></div>
+                    <p class="text-center mt-4">Processing your Resume...</p>
                 </div>
             </div>
         </div>
@@ -134,6 +164,7 @@
             const analyzeBtn = document.getElementById('analyze-btn');
             const optimizeBtn = document.getElementById('optimize-btn');
             const responseArea = document.getElementById('response-area');
+            const loading = document.getElementById('loading');
             let selectedFile = null;
 
             // Initialize marked with options
@@ -186,7 +217,7 @@
 
             async function processCV(action) {
                 if (!selectedFile) {
-                    alert('Please select a CV file first');
+                    alert('Please select a Resume file first');
                     return;
                 }
 
@@ -201,12 +232,8 @@
                 formData.append('action', action);
 
                 // Show loading spinner
-                responseArea.innerHTML = `
-                    <div class="flex flex-col items-center justify-center h-full">
-                        <div class="spinner mb-4"></div>
-                        <div class="text-gray-400">Processing your CV...</div>
-                    </div>
-                `;
+                loading.classList.remove('hidden');
+                responseArea.classList.add('hidden');
 
                 try {
                     const response = await fetch('/upload', {
@@ -222,9 +249,25 @@
                         // Convert markdown to HTML and display
                         responseArea.innerHTML = marked.parse(data.result);
                     }
+                    loading.classList.add('hidden');
+                    responseArea.classList.remove('hidden');
                 } catch (error) {
                     responseArea.innerHTML = `<div class="text-red-500">Error: ${error.message}</div>`;
+                    loading.classList.add('hidden');
+                    responseArea.classList.remove('hidden');
                 }
+            }
+
+            function copyResponse() {
+                const responseText = document.getElementById('response-area').innerText;
+                navigator.clipboard.writeText(responseText).then(() => {
+                    const copyBtn = document.querySelector('.copy-button');
+                    const originalContent = copyBtn.innerHTML;
+                    copyBtn.innerHTML = '<i class="fas fa-check"></i><span>Copied!</span>';
+                    setTimeout(() => {
+                        copyBtn.innerHTML = originalContent;
+                    }, 2000);
+                });
             }
 
             analyzeBtn.addEventListener('click', () => processCV('analyze'));
