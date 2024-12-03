@@ -93,6 +93,13 @@ def optimize_cv(cv_text, job_description):
 
     # Optimized CV
 
+    ## Personal Information
+    - Name: [Extract from CV if available]
+    - Email: [Extract from CV if available]
+    - Phone: [Extract from CV if available]
+    - Location: [Extract from CV if available]
+    - LinkedIn: [Extract from CV if available]
+
     ## Professional Summary
     [Compelling summary tailored to the role]
 
@@ -115,7 +122,13 @@ def optimize_cv(cv_text, job_description):
     - Relevant coursework
     - Academic achievements
 
+    ## Additional Information
+    - Certifications
+    - Languages
+    - Relevant volunteer work
+
     Note: Format the response using proper markdown with clear headings, bullet points, and consistent spacing.
+    Extract and include all personal information from the original CV.
     Use strong action verbs and quantifiable achievements.
     Maintain all truthful information while optimizing presentation.
     """
