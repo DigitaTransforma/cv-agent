@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CV Agent - AI-powered CV optimization</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/marked/lib/marked.min.js" rel="stylesheet">
+    <style>
+        .dark-mode {
+            background-color: #1a1a1a;
+            color: #ffffff;
+        }
+        .upload-area {
+            border: 2px dashed #4a5568;
+            transition: all 0.3s ease;
+        }
+        .upload-area:hover {
+            border-color: #667eea;
+        }
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        #response-area {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+        #response-area h1 { 
+            font-size: 1.8em;
+            font-weight: bold;
+            margin: 1em 0 0.5em 0;
+            color: #fff;
+        }
+        #response-area h2 {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin: 1em 0 0.5em 0;
+            color: #e2e8f0;
+        }
+        #response-area h3 {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin: 1em 0 0.5em 0;
+            color: #cbd5e0;
+        }
+        #response-area ul, #response-area ol {
+            margin: 1em 0;
+            padding-left: 2em;
+        }
+        #response-area ul li {
+            list-style-type: disc;
+            margin: 0.5em 0;
+        }
+        #response-area ol li {
+            list-style-type: decimal;
+            margin: 0.5em 0;
+        }
+        #response-area p {
+            margin: 1em 0;
+            line-height: 1.6;
+        }
+        #response-area strong {
+            color: #90cdf4;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body class="dark-mode min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <header class="mb-8">
+            <h1 class="text-3xl font-bold mb-2">CV Agent</h1>
+            <p class="text-gray-400">AI-powered CV optimization to help you land your dream job</p>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div class="space-y-6">
+                <!-- CV Upload Section -->
+                <div class="bg-gray-800 rounded-lg p-6">
+                    <h2 class="text-xl font-semibold mb-4">Upload Your CV</h2>
+                    <div id="upload-area" class="upload-area rounded-lg p-8 text-center cursor-pointer">
+                        <div class="mb-4">
+                            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                        </div>
+                        <p class="text-gray-400">Drop your CV here or click to browse</p>
+                        <p class="text-sm text-gray-500 mt-2">Supports PDF, DOC, DOCX</p>
+                        <input type="file" id="cv-upload" class="hidden" accept=".pdf,.doc,.docx">
+                    </div>
+                </div>
+
+                <!-- Job Description Section -->
+                <div class="bg-gray-800 rounded-lg p-6">
+                    <h2 class="text-xl font-semibold mb-4">Job Description</h2>
+                    <textarea id="job-description" class="w-full h-48 bg-gray-700 rounded-lg p-4 text-white" placeholder="Paste the job description here..."></textarea>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex space-x-4">
+                    <button id="analyze-btn" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition duration-300">
+                        Analyze CV
+                    </button>
+                    <button id="optimize-btn" class="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-6 rounded-lg transition duration-300">
+                        Optimize CV
+                    </button>
+                </div>
+            </div>
+
+            <!-- Response Section -->
+            <div class="bg-gray-800 rounded-lg p-6">
+                <h2 class="text-xl font-semibold mb-4">Response</h2>
+                <div id="response-area" class="bg-gray-700 rounded-lg p-4 min-h-[400px] text-gray-300 overflow-auto">
+                    <div class="flex items-center justify-center h-full text-gray-400">
+                        Response will appear here after analysis or optimization
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const uploadArea = document.getElementById('upload-area');
+            const fileInput = document.getElementById('cv-upload');
+            const jobDescription = document.getElementById('job-description');
+            const analyzeBtn = document.getElementById('analyze-btn');
+            const optimizeBtn = document.getElementById('optimize-btn');
+            const responseArea = document.getElementById('response-area');
+            let selectedFile = null;
+
+            // Initialize marked with options
+            marked.setOptions({
+                breaks: true,
+                gfm: true,
+                headerIds: false
+            });
+
+            // Handle drag and drop
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.classList.add('border-blue-500');
+            });
+
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.classList.remove('border-blue-500');
+            });
+
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.classList.remove('border-blue-500');
+                const file = e.dataTransfer.files[0];
+                handleFile(file);
+            });
+
+            // Handle click to upload
+            uploadArea.addEventListener('click', () => {
+                fileInput.click();
+            });
+
+            fileInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                handleFile(file);
+            });
+
+            function handleFile(file) {
+                if (file) {
+                    const validTypes = ['.pdf', '.doc', '.docx'];
+                    const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
+                    
+                    if (validTypes.includes(fileExtension)) {
+                        selectedFile = file;
+                        uploadArea.innerHTML = `<p class="text-green-500">Selected: ${file.name}</p>`;
+                    } else {
+                        alert('Please upload a PDF, DOC, or DOCX file');
+                    }
+                }
+            }
+
+            async function processCV(action) {
+                if (!selectedFile) {
+                    alert('Please select a CV file first');
+                    return;
+                }
+
+                if (!jobDescription.value.trim()) {
+                    alert('Please paste a job description');
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append('cv', selectedFile);
+                formData.append('job_description', jobDescription.value);
+                formData.append('action', action);
+
+                // Show loading spinner
+                responseArea.innerHTML = `
+                    <div class="flex flex-col items-center justify-center h-full">
+                        <div class="spinner mb-4"></div>
+                        <div class="text-gray-400">Processing your CV...</div>
+                    </div>
+                `;
+
+                try {
+                    const response = await fetch('/upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const data = await response.json();
+                    
+                    if (data.error) {
+                        responseArea.innerHTML = `<div class="text-red-500">Error: ${data.error}</div>`;
+                    } else {
+                        // Convert markdown to HTML and display
+                        responseArea.innerHTML = marked.parse(data.result);
+                    }
+                } catch (error) {
+                    responseArea.innerHTML = `<div class="text-red-500">Error: ${error.message}</div>`;
+                }
+            }
+
+            analyzeBtn.addEventListener('click', () => processCV('analyze'));
+            optimizeBtn.addEventListener('click', () => processCV('optimize'));
+        });
+    </script>
+</body>
+</html>
