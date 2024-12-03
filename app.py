@@ -83,22 +83,25 @@ def analyze_cv(cv_text, job_description):
 
 def optimize_cv(cv_text, job_description):
     prompt = f"""
-    As an expert CV optimizer, rewrite this CV to better match the job description while maintaining truthfulness.
-    
+    As an expert CV optimizer, first extract all personal information from the CV, then rewrite it to better match the job description while maintaining truthfulness.
+
     Original CV: {cv_text}
     
     Job Description: {job_description}
     
-    Please provide the optimized CV in the following format:
+    IMPORTANT: First, carefully extract all personal information from the CV and ensure it appears at the beginning of the response.
+    
+    Please structure the response exactly as follows, starting with personal information:
 
     # Optimized CV
 
     ## Personal Information
-    - Name: [Extract from CV if available]
-    - Email: [Extract from CV if available]
-    - Phone: [Extract from CV if available]
-    - Location: [Extract from CV if available]
-    - LinkedIn: [Extract from CV if available]
+    IMPORTANT - Extract and include these details from the original CV:
+    - Full Name: [MUST extract from CV]
+    - Email Address: [MUST extract from CV]
+    - Phone Number: [MUST extract from CV]
+    - Location: [MUST extract from CV]
+    - LinkedIn: [Extract if available in CV]
 
     ## Professional Summary
     [Compelling summary tailored to the role]
@@ -127,10 +130,13 @@ def optimize_cv(cv_text, job_description):
     - Languages
     - Relevant volunteer work
 
-    Note: Format the response using proper markdown with clear headings, bullet points, and consistent spacing.
-    Extract and include all personal information from the original CV.
-    Use strong action verbs and quantifiable achievements.
-    Maintain all truthful information while optimizing presentation.
+    CRITICAL INSTRUCTIONS:
+    1. MUST start with Personal Information section
+    2. MUST extract and display actual personal details from the CV
+    3. DO NOT use placeholder text for personal information
+    4. Use proper markdown formatting with clear headings and consistent spacing
+    5. Use strong action verbs and quantifiable achievements
+    6. Maintain all truthful information while optimizing presentation
     """
     
     response = model.generate_content(prompt)
